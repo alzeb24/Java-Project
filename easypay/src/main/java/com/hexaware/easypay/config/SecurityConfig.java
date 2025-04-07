@@ -56,7 +56,8 @@ public class SecurityConfig {
                     "/api/v1/employees/verify-email/**",
                     "/employees/verify/**",
                     "/employees/verify-email/**",
-                    "/api/v1/register/**"
+                    "/api/v1/register/**",
+                    "/api/v1/payrolls/{id}/download"
                 ).permitAll()
                 .anyRequest().authenticated()
             )

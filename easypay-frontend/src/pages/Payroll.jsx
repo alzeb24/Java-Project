@@ -101,6 +101,18 @@ const Payroll = () => {
         }
     };
 
+    const handleDownloadPayroll = async (id) => {
+        try {
+            setLoading(true);
+            await payrollService.downloadPayrollPdf(id);
+        } catch (err) {
+            setError('Failed to download payroll PDF');
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
 
     return (
         <div className="payroll-page">
@@ -230,7 +242,10 @@ const Payroll = () => {
                                         </span>
                                     </td>
                                     <td>
-                                        <button className="btn-download">
+                                        <button
+                                            className="btn-download"
+                                            onClick={() => handleDownloadPayroll(payroll.id)}
+                                            disabled={loading}>
                                             <FontAwesomeIcon icon={faFile} /> Download
                                         </button>
                                     </td>

@@ -19,6 +19,7 @@ import com.hexaware.easypay.model.Payroll;
 import com.hexaware.easypay.model.PayrollStatus;
 import com.hexaware.easypay.repository.EmployeeRepository;
 import com.hexaware.easypay.repository.PayrollRepository;
+import com.itextpdf.text.DocumentException;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -29,6 +30,9 @@ import jakarta.transaction.Transactional;
 public class PayrollServiceImpl implements IPayrollService {
 	@PersistenceContext
     private EntityManager entityManager;
+	
+	@Autowired
+	private PdfService pdfService;
 
 	@Autowired
     private PayrollRepository payrollRepository;
@@ -267,5 +271,15 @@ public class PayrollServiceImpl implements IPayrollService {
 
         Payroll updatedPayroll = payrollRepository.save(payroll);
         return modelMapper.map(updatedPayroll, PayrollDTO.class);
+    }
+    
+    @Override
+    public byte[] downloadPayrollPdf(Long id) throws ResourceNotFoundException, DocumentException {
+        Payroll payroll = payrollRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Payroll", "id", id));
+        
+        Employee employee = payroll.getEmployee();
+        
+        return pdfService.generatePayrollPdf(payroll, employee);
     }
 }

@@ -84,6 +84,27 @@ const payrollService = {
             console.error('Error approving payroll:', error);
             throw error;
         }
+    },
+
+    downloadPayrollPdf: async (id) => {
+        try {
+            const response = await axiosInstance.get(`/payrolls/${id}/download`, {
+                responseType: 'blob'  // Important for handling binary data
+            });
+            
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `payroll_${id}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            return true;
+        } catch (error) {
+            console.error('Error downloading payroll PDF:', error);
+            throw error;
+        }
     }
 };
 

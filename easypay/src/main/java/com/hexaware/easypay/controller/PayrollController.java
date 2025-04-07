@@ -22,22 +22,37 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.hexaware.easypay.customexceptions.ResourceNotFoundException;
 import com.hexaware.easypay.dto.PayrollDTO;
+import com.hexaware.easypay.model.Employee;
+import com.hexaware.easypay.model.Payroll;
 import com.hexaware.easypay.model.PayrollStatus;
+import com.hexaware.easypay.repository.PayrollRepository;
 import com.hexaware.easypay.service.IPayrollService;
+import com.hexaware.easypay.service.PdfService;
 
 import jakarta.validation.Valid;
+
+import com.itextpdf.text.DocumentException;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 
 @RestController
 @RequestMapping("/payrolls")
 @PreAuthorize("hasRole('ADMIN')") // Only admin can access payroll functions
 public class PayrollController {
+	
+	@Autowired
+	private PdfService pdfService;
 
 	@Autowired
     private IPayrollService payrollService;
+	
+	@Autowired
+	private PayrollRepository payrollRepository;
 
     @Autowired
-    public PayrollController(IPayrollService payrollService) {
+    public PayrollController(IPayrollService payrollService, PayrollRepository payrollRepository) {
         this.payrollService = payrollService;
+        this.payrollRepository = payrollRepository;
     }
 
     @PostMapping
@@ -119,5 +134,26 @@ public class PayrollController {
     @GetMapping("/test")
     public String test() {
         return "Payroll Controller is working!";
+    }
+    
+    @GetMapping("/{id}/download")
+    public ResponseEntity<byte[]> downloadPayrollPdf(@PathVariable Long id) throws ResourceNotFoundException {
+        try {
+            Payroll payroll = payrollRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Payroll", "id", id));
+            
+            Employee employee = payroll.getEmployee();
+            
+            byte[] pdfBytes = pdfService.generatePayrollPdf(payroll, employee);
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDispositionFormData("attachment", "payroll_" + id + ".pdf");
+            headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+            
+            return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
+        } catch (DocumentException e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }
